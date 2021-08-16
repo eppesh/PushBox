@@ -5,14 +5,7 @@ namespace pushbox
 {
 Map::Map() :level_(1), hero_x_(0), hero_y_(0), is_need_repaint_(true)
 {
-    map_vec_.resize(20, std::vector<int>(20)); // 指定内外层vector大小,之后才能使用下标方式访问
-    for (int i = 0; i < 20; ++i)
-    {
-        for (int j = 0; j < 20; ++j)
-        {
-            map_[i][j] = 0;
-        }
-    }
+    map_vec_.resize(20, std::vector<int>(20)); // 指定内外层vector大小,之后才能使用下标方式访问    
 }
 
 Map::~Map()
@@ -34,7 +27,6 @@ void Map::DrawMap(const int offset, const int chartlet_width, const int chartlet
         {
             int dst_x = offset + chartlet_width * column;
             int dst_y = 40 + chartlet_height * row;
-            //putimage(dst_x, dst_y, &map_element_image_[map_[row][column]]);
             putimage(dst_x, dst_y, &map_element_image_[map_vec_[row][column]]);
         }
     }
@@ -79,7 +71,9 @@ void Map::LoadMap(int level)
     in_file.open(file_name, std::ios::in);
     if (!in_file.is_open())
     {
-        // TODO(Sean): 将错误信息传递到界面状态栏（或信息栏）
+        char tips[32] = { 0 };
+        sprintf_s(tips, "打开地图文件%s失败!", file_name);
+        UI::ShowTips(TipsArea::kTipsStatus, tips, 24, false);
         return;
     }
 
@@ -93,7 +87,6 @@ void Map::LoadMap(int level)
         for (int i = 0; i < line_content.size(); ++i)
         {
             tmp_map_element[index] = line_content[i] - '0';
-            //printf("index:%d, i:%d, line_content[%d]:%c \n", index, i, i, line_content[i]);
             index++;
         }
     }
@@ -103,27 +96,22 @@ void Map::LoadMap(int level)
     {
         for (int column = 0; column < 20; ++column)
         {
-            map_[row][column] = tmp_map_element[index];
             map_vec_[row][column] = tmp_map_element[index];
             // 记录Hero当前的位置
-            //if (map_[row][column] == MapElement::kDown)
             if (map_vec_[row][column] == MapElement::kDown)
             {
                 hero_x_ = column;
                 hero_y_ = row;
             }
-            //printf("%d", map_vec_[row][column]);
             index++;
         }
-        //printf("\n");
     }
-    //printf("\n");
 
-    // 0718 LoadMap后 刷新地图
+    // 20210718 LoadMap后 刷新地图
     is_need_repaint_ = true;
     char tips[32] = { 0 };
     sprintf_s(tips, "第%d关", level);
-    UI::ShowTips(TipsArea::kTipsUpper, tips, 40, TipsType::kLevelOnly);
+    UI::ShowTips(TipsArea::kTipsUpper, tips, 40, false, TipsType::kLevelOnly);
 }
 
 void Map::LoadMapElement()
@@ -155,19 +143,6 @@ int Map::GetChartletWidth()
 int Map::GetChartletHeight()
 {
     return map_element_image_[0].getheight();
-}
-
-int *Map::GetMap()
-{
-    int *data = new int[20 * 20];
-    for (int i = 0; i < 20; ++i)
-    {
-        for (int j = 0; j < 20; ++j)
-        {
-            data[20 * i + j] = map_[i][j];
-        }
-    }
-    return data;
 }
 
 Map2DVector Map::GetMapVector()

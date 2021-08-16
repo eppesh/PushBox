@@ -34,8 +34,6 @@ int main()
 	Map2DVector map_vector = map_object.GetMapVector();
 	PushBox pushbox(map_object);
 
-    //printf("main-- %#x\n", &map_object);
-
     // 子线程：响应MouseClick事件，用于按钮单击功能
     std::thread thread_pushbox_mouseclick(&PushBox::Run, &pushbox);
     thread_pushbox_mouseclick.detach();

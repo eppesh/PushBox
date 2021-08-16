@@ -5,7 +5,7 @@ namespace pushbox
 UI::UI(const int menu_area_width, const int tips_area_height, 
     const int game_area_width, const int game_area_height, const int status_area_height)
 {
-    initgraph(menu_area_width + game_area_width, tips_area_height + game_area_height + status_area_height, EW_SHOWCONSOLE);
+    initgraph(menu_area_width + game_area_width, tips_area_height + game_area_height + status_area_height/*, EW_SHOWCONSOLE*/);
     setbkmode(TRANSPARENT);
     setbkcolor(RGB(183, 145, 106));
     cleardevice();
@@ -18,18 +18,9 @@ UI::UI(const int menu_area_width, const int tips_area_height,
 
     DrawMenu();
 
-    // 状态栏提示信息
-    /*TCHAR tips[64] = { 0 };
-    swprintf_s(tips, "祝你顺利！");
-    settextcolor(RGB(6, 31, 62));
-    settextstyle(24, 0, "微软雅黑");
-    outtextxy(20, 903, tips);*/
-
-    //char *tips = "祝你顺利！";
     char tips[128] = { 0 };
     sprintf_s(tips, "祝你顺利!");
-    //ShowTips(20, tips_area_height + 903, tips, RGB(6, 31, 62), 24);
-    ShowTips(kTipsStatus, tips, 24);
+    ShowTips(kTipsStatus, tips, 24, false);
 }
 
 UI::~UI()
@@ -92,25 +83,9 @@ void UI::SetTransparent(IMAGE image, const int img_width, const int img_height, 
     EndBatchDraw();
 }
 
-//void UI::ShowLevelTips(const int level)
-//{
-//    // 先清除原先的内容
-//    setfillcolor(RGB(183, 145, 106));
-//    setlinecolor(RGB(183, 145, 106));
-//    fillrectangle(256, 0, 256 + 900, 40); // 256:菜单区域宽度; 900:游戏区域宽度;40:上方提示区域高度
-//
-//    // 利用drawtext输出提示信息
-//    char tips[32] = { 0 };
-//    sprintf_s(tips, "第%d关", level);
-//    RECT rectangle = { 600, 0, 755, 40 }; // "第几关"占宽约80
-//    settextcolor(RGB(6, 31, 62));
-//    settextstyle(40, 0, "微软雅黑");
-//    
-//    drawtext(tips, &rectangle, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-//}
 
-void UI::ShowTips(const int tips_area, char *tips, const int text_size, 
-    const int tips_type /* = 0 */, const COLORREF text_color/* = RGB(6, 31, 62) */)
+void UI::ShowTips(const int tips_area, char *tips, const int text_size, const bool is_disappear, 
+    const int tips_type /* = 0 */, const COLORREF text_color /* = RGB(6, 31, 62) */)
 {
     // 关卡不为0表示是游戏区上方的关卡提示信息
     if (tips_area == TipsArea::kTipsUpper)
@@ -124,23 +99,27 @@ void UI::ShowTips(const int tips_area, char *tips, const int text_size,
         RECT rectangle;
         switch (tips_type)
         {
-        case TipsType::kLevelOnly:        
-            /*char tips_level[32] = { 0 };
-            sprintf_s(tips_level, "第%d关", level);*/
+        case TipsType::kLevelOnly:
             rectangle = { 600, 0, 755, 40 }; // "第几关"占宽约80
             settextcolor(text_color);
             
             break;
         case TipsType::kLevelSuccess:
             rectangle = { 500, 0, 900, 40 }; 
-            //setlinecolor(RGB(255, 255, 255));
             settextcolor(text_color);
-            /*settextstyle(40, 0, "微软雅黑");
-            drawtext(tips, &rectangle, DT_CENTER | DT_VCENTER | DT_SINGLELINE);*/
             break;
         }
         settextstyle(text_size, 0, "微软雅黑");
         drawtext(tips, &rectangle, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+        if (is_disappear)
+        {
+            Sleep(2000);
+            // 清除刚才展示的内容
+            setfillcolor(RGB(183, 145, 106));
+            setlinecolor(RGB(183, 145, 106));
+            fillrectangle(257, 0, 256 + 900, 40); // 256:菜单区域宽度; 900:游戏区域宽度;40:上方提示区域高度
+        }
     }
     else if (tips_area == TipsArea::kTipsStatus)
     {
@@ -154,18 +133,15 @@ void UI::ShowTips(const int tips_area, char *tips, const int text_size,
         settextcolor(text_color);
         settextstyle(text_size, 0, "微软雅黑");
         drawtext(tips, &rectangle, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+        if (is_disappear)
+        {
+            Sleep(2000);
+            setfillcolor(RGB(183, 145, 106));
+            setlinecolor(RGB(183, 145, 106));
+            fillrectangle(0, 40 + 900 + 2, 256 + 900, 40 + 900 + 30); // 40:游戏区上方提示信息高度; 256:菜单区域宽度; 900:游戏区域宽度和高度;30:状态栏区域宽度
+        }
     }
 }
-
-//void UI::ShowTips(int dst_x, int dst_y, char *tips, const COLORREF text_color, const int text_size)
-//{
-//    // 先清空之前该区域的内容
-//    //setfillcolor(text_color); // 设置为背景色
-//    //fillrectangle(dst_x, dst_y, 900, 930);
-//
-//    settextcolor(text_color);
-//    settextstyle(text_size, 0, "微软雅黑");
-//    outtextxy(dst_x, dst_y, tips);
-//}
 
 } // namespace pushbox

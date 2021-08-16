@@ -45,8 +45,6 @@ class Map
 public:
     Map();
     ~Map();
-    //Map(const Map &map);                // copy构造函数
-    //Map &operator=(const Map &map);     // copy assignment操作符
     void Init();                        // 初始化    
     int GetHeroX();                     // 获取Hero当前位置的x坐标
     int GetHeroY();                     // 获取Hero当前位置的y坐标
@@ -56,7 +54,6 @@ public:
     int GetLevel();                     // 获取关卡数
     int GetChartletWidth();             // 获取贴图的宽度
     int GetChartletHeight();            // 获取贴图的高度
-    int *GetMap();                      // 获取地图数据
     Map2DVector GetMapVector();         // 获取地图数据vector
     void SetIsNeedRepaint(const bool flag);  // 设置是否需要刷新地图
     void UpdateMap(Map2DVector map_vec);// 更新地图数据
@@ -72,7 +69,6 @@ private:
     int level_;                         // 关卡
     int hero_x_;                        // 小人(Hero)当前位置的x坐标(屏幕坐标)(即地图中元素为5时的位置)
     int hero_y_;                        // 小人(Hero)当前位置的y坐标(屏幕坐标)(即地图中元素为5时的位置)
-    int map_[20][20];                   // 地图;用二维数组存放
     bool is_need_repaint_;              // 是否需要刷新地图
     IMAGE map_element_image_[10];       // 地图元素对应的素材图片
     Map2DVector map_vec_;               // 地图：用vector存放

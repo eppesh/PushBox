@@ -4,7 +4,7 @@ namespace pushbox
 {
 
 
-// Test: printf current map
+// Test Function: print current map
 void PrintCurrentMap(const Map2DVector &map)
 {
     //printf("Start---------------------%#x\n", &map);
@@ -21,42 +21,19 @@ void PrintCurrentMap(const Map2DVector &map)
 
 PushBox::PushBox(Map &map_object) :is_move_enable(true)
 {
-    /*Map2DVector map_vec = map_object.GetMapVector();
-    UpdateReferenceMap(map_vec);*/
     this->map_object_ = &map_object;
-    //printf("PushBox::map_vector_ before%#x\n", &map_vector_);
     this->map_vector_ = map_object.GetMapVector();
-    //printf("PushBox::map_vector_ after%#x\n", &map_vector_);
     UpdateReferenceMap(this->map_vector_);
-
-    /*this->map_object_ = map;
-    int *data = map->GetMap();
-    for (int i = 0; i < 20; ++i)
-    {
-        for (int j = 0; j < 20; ++j)
-        {
-            this->map_data_[i][j] = data[20 * i + j];
-        }
-    }
-    delete[]data;
-    data = nullptr;*/
 }
 
 PushBox::~PushBox()
 {
-    /*if (map_object_ != nullptr)
-    {
-        delete map_object_;
-        map_object_ = nullptr;
-    }*/
 }
 
 void PushBox::Play(const int offset, Map &map_object, Map2DVector &map_vector)
 {
-    if (_kbhit() /*&& is_move_enable*/)		// 如果有按键按下，则_kbhit()返回值
+    if (_kbhit())		// 如果有按键按下，则_kbhit()返回值
     {
-        //PrintCurrentMap(map_vector_); // 测试，查看移动前地图
-
         int pressed_key = _getch();
         switch (pressed_key)
         {
@@ -81,66 +58,30 @@ void PushBox::Play(const int offset, Map &map_object, Map2DVector &map_vector)
 
         if (IsWin(map_vector_))
         {
-            /*printf("-------IsWin------\n");
-            for (int i = 0; i < 20; ++i)
-            {
-                for (int j = 0; j < 20; ++j)
-                {
-                    printf("%d", map_vector_[i][j]);
-                }
-                printf("\n");
-            }
-            printf("-------------------\n\n");*/
-
-            is_move_enable = false;
-            // TODO(Sean): 当前关卡通过后,弹出提示框(给出本关耗时,并询问是否开启下一关)
-            // 通关后小人就不能再移动了
             map_object.DrawMap(offset, map_object.GetChartletWidth(), map_object.GetChartletHeight());
-            //MessageBox(NULL, "已成功通关!", "Tip", MB_OK);
-
-            //// 状态栏提示,TODO(Sean):须先清除之前的显示内容
-            //setfillcolor(RGB(183, 145, 106)); // 设置为背景色
-            //setlinecolor(RGB(183, 145, 106));
-            //fillrectangle(0, 900, offset + 900, 930);
-
+            
             int current_level = map_object.GetLevel();
 
-            //TCHAR tips[64] = { 0 };
-            //swprintf_s(tips, "恭喜你顺利闯过第%d关！", current_level);
-            //settextcolor(RGB(6, 31, 62));
-            //settextstyle(40, 0, "微软雅黑");
-            ////outtextxy(20, 903, tips);
-            //outtextxy(500, 30, tips);
-
             char tips[128] = { 0 };
-            sprintf_s(tips, "恭喜你顺利闯过第%d关！", current_level);
-            //UI::ShowTips(500, 0, tips, RGB(6, 31, 62), 40);
-            UI::ShowTips(TipsArea::kTipsUpper, tips, 40, TipsType::kLevelSuccess);
+            sprintf_s(tips, "恭喜你顺利闯过第%d关！", current_level);            
+            UI::ShowTips(TipsArea::kTipsUpper, tips, 40, false, TipsType::kLevelSuccess);
             
-            Sleep(3000);
-            //map_object.SetIsNeedRepaint(false);      // 使地图刷新
-            //int msgbox_id = MessageBox(nullptr, "是否继续下一关？", "通关提示", MB_ICONQUESTION | MB_OKCANCEL);
-            //if (msgbox_id == IDOK)
-            //{                
-            //    current_level++;
-            //    map_object.SetLevel(current_level);
-            //    map_object.LoadMap(current_level);
-            //    map_object.SetIsNeedRepaint(true);      // 使地图刷新
-            //    is_move_enable = true;
-            //}
-            //else
-            //{
-            //    closegraph();
-            //    exit(0);
-            //}
+            int msgbox_id = MessageBox(nullptr, "是否继续下一关？", "通关提示", MB_ICONQUESTION | MB_OKCANCEL);
+            if (msgbox_id == IDOK)
+            {                
+                current_level++;
+                map_object.LoadMap(current_level);          // 加载下一关地图并刷新地图
+                map_vector_ = map_object.GetMapVector();    // 将新地图数据更新到当前内存中
+                UpdateReferenceMap(map_vector_);            // 同时更新参考地图
+                ClearStack();
 
-            current_level++;
-            //map_object.SetLevel(current_level);
-            map_object.LoadMap(current_level);
-            map_vector_ = map_object.GetMapVector(); // 将新地图数据更新到当前内存中
-            UpdateReferenceMap(map_vector_);         // 同时更新参考地图
-            //map_object.SetIsNeedRepaint(true);      // 使地图刷新
-            //printf("***level[%d] hero(%d,%d)\n", current_level, map_object.GetHeroX(), map_object.GetHeroY());
+                // TODO(Sean): 通关后通过回调函数进行其他操作（如：记录耗时、刷新已通关地图等功能）
+            }
+            else
+            {
+                closegraph();
+                exit(0);
+            }
         }
     }
 }
@@ -152,14 +93,8 @@ bool PushBox::IsWin(Map2DVector &map_vector)
     {
         for (int j = 0; j < 20; ++j)
         {
-            // 遍历地图上各元素,若地图上还存在至少一个MapElementTmp::MapElement::kDestination,说明还未结束
-            //if (map_data_[i][j] == MapElement::kDestination)
-            /*if (map_vector[i][j] == MapElement::kDestination)
-            {
-                return false;
-            }*/
-
-            // 针对第3关情况，若最后一个9被小人占据，会误认为通关的bug
+            // 通关条件不能用“遍历地图上各元素,若地图上还存在至少一个kDestination(9),说明还未结束”的方式，因为           
+            // 针对第3关情况，若最后一个kDestination(9)被小人占据，会误认为通关的bug
             if (reference_map_[i][j] == 4 || reference_map_[i][j] == 9)
             {
                 if (map_vector[i][j] == MapElement::kReady)
@@ -205,6 +140,7 @@ void PushBox::MoveUp(Map &map_object, Map2DVector &map_vector)
         UpdateCurrentPosition(hero_x, hero_y, map_vector);
         map_vector[hero_y - 1][hero_x] = MapElement::kUp;
         hero_y--;
+        move_stack_.push(kUpMovable);
     }
     else if (map_vector[hero_y - 1][hero_x] == MapElement::kBox || map_vector[hero_y - 1][hero_x] == MapElement::kReady)  // "上方向"是MapElement::kBox或MapElement::kReady时,要看上方向的"上方向"是否可以移动(箱子能否推得动)
     {
@@ -215,6 +151,7 @@ void PushBox::MoveUp(Map &map_object, Map2DVector &map_vector)
             map_vector[hero_y - 1][hero_x] = MapElement::kUp;
             map_vector[hero_y - 2][hero_x] = MapElement::kReady;
             hero_y--;
+            move_stack_.push(kUpUnMovable);
         }
         else if (map_vector[hero_y - 2][hero_x] == MapElement::kGrass)   // 如果箱子的上面是空地MapElement::kGrass
         {
@@ -222,6 +159,7 @@ void PushBox::MoveUp(Map &map_object, Map2DVector &map_vector)
             map_vector[hero_y - 1][hero_x] = MapElement::kUp;
             map_vector[hero_y - 2][hero_x] = MapElement::kBox;
             hero_y--;
+            move_stack_.push(kUpUnMovable);
         }
         else    // 若箱子的上面是其他障碍物(MapElement::kWall/MapElement::kBox/MapElement::kReady)则无法移动
         {
@@ -248,6 +186,7 @@ void PushBox::MoveDown(Map &map_object, Map2DVector &map_vector)
         UpdateCurrentPosition(hero_x, hero_y, map_vector);
         map_vector[hero_y + 1][hero_x] = MapElement::kDown;
         hero_y++;
+        move_stack_.push(kDownMovable);
     }
     else if (map_vector[hero_y + 1][hero_x] == MapElement::kBox || map_vector[hero_y + 1][hero_x] == MapElement::kReady)		// 如果下方向是箱子（MapElement::kBox或MapElement::kReady）,则要看箱子下面的位置是否可以移动
     {
@@ -258,6 +197,7 @@ void PushBox::MoveDown(Map &map_object, Map2DVector &map_vector)
             map_vector[hero_y + 1][hero_x] = MapElement::kDown;
             map_vector[hero_y + 2][hero_x] = MapElement::kBox;
             hero_y++;
+            move_stack_.push(kDownUnMovable);
         }
         else if (map_vector[hero_y + 2][hero_x] == MapElement::kDestination)		// 如果箱子的下面是目标点位,则箱子可以向下移动
         {
@@ -265,6 +205,7 @@ void PushBox::MoveDown(Map &map_object, Map2DVector &map_vector)
             map_vector[hero_y + 1][hero_x] = MapElement::kDown;
             map_vector[hero_y + 2][hero_x] = MapElement::kReady;
             hero_y++;
+            move_stack_.push(kDownUnMovable);
         }
         else
         {
@@ -291,6 +232,7 @@ void PushBox::MoveLeft(Map &map_object, Map2DVector &map_vector)
         UpdateCurrentPosition(hero_x, hero_y, map_vector);
         map_vector[hero_y][hero_x - 1] = MapElement::kLeft;
         hero_x--;
+        move_stack_.push(kLeftMovable);
     }
     else if (map_vector[hero_y][hero_x - 1] == MapElement::kBox || map_vector[hero_y][hero_x - 1] == MapElement::kReady)		// 如果左方向是箱子（MapElement::kBox或MapElement::kReady）,则要再看箱子左边的位置是否可以移动
     {
@@ -301,6 +243,7 @@ void PushBox::MoveLeft(Map &map_object, Map2DVector &map_vector)
             map_vector[hero_y][hero_x - 1] = MapElement::kLeft;
             map_vector[hero_y][hero_x - 2] = MapElement::kBox;
             hero_x--;
+            move_stack_.push(kLeftUnMovable);
         }
         else if (map_vector[hero_y][hero_x - 2] == MapElement::kDestination)		// 如果箱子的左边是目标点位,则箱子可以向左移动
         {
@@ -308,6 +251,7 @@ void PushBox::MoveLeft(Map &map_object, Map2DVector &map_vector)
             map_vector[hero_y][hero_x - 1] = MapElement::kLeft;
             map_vector[hero_y][hero_x - 2] = MapElement::kReady;
             hero_x--;
+            move_stack_.push(kLeftUnMovable);
         }
         else
         {
@@ -334,6 +278,7 @@ void PushBox::MoveRight(Map &map_object, Map2DVector &map_vector)
         UpdateCurrentPosition(hero_x, hero_y, map_vector);
         map_vector[hero_y][hero_x + 1] = MapElement::kRight;
         hero_x++;
+        move_stack_.push(kRightMovable);
     }
     else if (map_vector[hero_y][hero_x + 1] == MapElement::kBox || map_vector[hero_y][hero_x + 1] == MapElement::kReady)		// 如果右方向是箱子（MapElement::kBox或MapElement::kReady）,则要再看箱子右边的位置是否可以移动
     {
@@ -344,6 +289,7 @@ void PushBox::MoveRight(Map &map_object, Map2DVector &map_vector)
             map_vector[hero_y][hero_x + 1] = MapElement::kRight;
             map_vector[hero_y][hero_x + 2] = MapElement::kBox;
             hero_x++;
+            move_stack_.push(kRightUnMovable);
         }
         else if (map_vector[hero_y][hero_x + 2] == MapElement::kDestination)		// 如果箱子的右边是目标点位,则箱子可以向右移动
         {
@@ -351,6 +297,7 @@ void PushBox::MoveRight(Map &map_object, Map2DVector &map_vector)
             map_vector[hero_y][hero_x + 1] = MapElement::kRight;
             map_vector[hero_y][hero_x + 2] = MapElement::kReady;
             hero_x++;
+            move_stack_.push(kRightUnMovable);
         }
         else
         {
@@ -366,24 +313,203 @@ void PushBox::MoveRight(Map &map_object, Map2DVector &map_vector)
     map_object.SetIsNeedRepaint(true);     // 使地图刷新
 }
 
-void PushBox::UndoMoveUp()
+// 思路:向上移动后，退一步即为由上往下恢复; 
+// 若向上可移动,则Hero位于上方位置,先恢复成Grass或Destination,再恢复Hero即可;
+// 若向上不可移动,即上方向是箱子(Box或Ready),则Hero位于中间位置,上面是推动箱子,下面是之前位置;此时
+// 可先将上面位置恢复成Destination或Grass,再将中间位置恢复成Box或Ready,最后恢复下面位置的Hero.
+void PushBox::UndoMoveUp(int move_type)
 {
+    int hero_x = map_object_->GetHeroX();
+    int hero_y = map_object_->GetHeroY();
 
+    // 上方向可移动,即上方向为Grass或Destination时
+    if (move_type == kUpMovable)
+    {
+        UpdateCurrentPosition(hero_x, hero_y, map_vector_);
+    }
+    else if(move_type == kUpUnMovable)
+    {
+        // 先将最上面位置恢复成Destination或Grass
+        if (reference_map_[hero_y - 1][hero_x] == MapElement::kDestination || reference_map_[hero_y - 1][hero_x] == MapElement::kReady)
+        {
+            map_vector_[hero_y - 1][hero_x] = MapElement::kDestination;
+        }
+        else
+        {
+            map_vector_[hero_y - 1][hero_x] = MapElement::kGrass;
+        }
+
+        // 再将中间位置恢复成Box或Ready
+        // 思考：会有MapElement::kDestination的情况吗?
+        if (/*reference_map_[hero_y][hero_x] == MapElement::kDestination ||*/ reference_map_[hero_y][hero_x] == MapElement::kReady)
+        {
+            map_vector_[hero_y][hero_x] = MapElement::kReady;
+        }
+        else
+        {
+            map_vector_[hero_y][hero_x] = MapElement::kBox;
+        }
+    }
+    // 最后将最下面位置恢复成原来的Hero状态
+    // TODO(Sean): 如果恢复成Up,第一步移动前若为Down,则恢复成Up不合适;如第1关和第10关第1步向上走时;
+    // 但如果不是第一步还是得恢复成Up(比如连续向上走几步,退一步后Hero会消失)
+    if (move_stack_.size() == 1) // 如果只走了一步,则恢复成Down(正面朝下),否则恢复成Up(正面朝上)
+    {
+        map_vector_[hero_y + 1][hero_x] = reference_map_[hero_y + 1][hero_x]; 
+    }
+    else
+    {
+        map_vector_[hero_y + 1][hero_x] = MapElement::kUp;
+    }
+    
+    hero_y++;
+
+    map_object_->SetHeroY(hero_y);            // 更新小人当前坐标
+    map_object_->UpdateMap(map_vector_);      // 更新地图数据
+    map_object_->SetIsNeedRepaint(true);      // 使地图刷新
 }
 
-void PushBox::UndoMoveDown()
+void PushBox::UndoMoveDown(int move_type)
 {
+    int hero_x = map_object_->GetHeroX();
+    int hero_y = map_object_->GetHeroY();
 
+    // 下方向可移动,即下方向为Grass或Destination时
+    if (move_type == kDownMovable)
+    {
+        UpdateCurrentPosition(hero_x, hero_y, map_vector_);
+    }
+    else if (move_type == kDownUnMovable)
+    {
+        // 先将最下面位置恢复成Destination或Grass
+        if (reference_map_[hero_y + 1][hero_x] == MapElement::kDestination || reference_map_[hero_y + 1][hero_x] == MapElement::kReady)
+        {
+            map_vector_[hero_y + 1][hero_x] = MapElement::kDestination;
+        }
+        else
+        {
+            map_vector_[hero_y + 1][hero_x] = MapElement::kGrass;
+        }
+
+        // 再将中间位置恢复成Box或Ready
+        // 思考：会有MapElement::kDestination的情况吗?
+        if (/*reference_map_[hero_y][hero_x] == MapElement::kDestination ||*/ reference_map_[hero_y][hero_x] == MapElement::kReady)
+        {
+            map_vector_[hero_y][hero_x] = MapElement::kReady;
+        }
+        else
+        {
+            map_vector_[hero_y][hero_x] = MapElement::kBox;
+        }
+    }
+    // 最后将最上面位置恢复成恢复成Down(正面朝下)
+    map_vector_[hero_y - 1][hero_x] = MapElement::kDown;
+    
+    hero_y--;
+
+    map_object_->SetHeroY(hero_y);            // 更新小人当前坐标
+    map_object_->UpdateMap(map_vector_);      // 更新地图数据
+    map_object_->SetIsNeedRepaint(true);      // 使地图刷新
 }
 
-void PushBox::UndoMoveLeft()
+void PushBox::UndoMoveLeft(int move_type)
 {
+    int hero_x = map_object_->GetHeroX();
+    int hero_y = map_object_->GetHeroY();
 
+    // 左方向可移动,即左方向为Grass或Destination时
+    if (move_type == kLeftMovable)
+    {
+        UpdateCurrentPosition(hero_x, hero_y, map_vector_);
+    }
+    else if (move_type == kLeftUnMovable)
+    {
+        // 先将最左面位置恢复成Destination或Grass
+        if (reference_map_[hero_y][hero_x - 1] == MapElement::kDestination || reference_map_[hero_y][hero_x - 1] == MapElement::kReady)
+        {
+            map_vector_[hero_y][hero_x - 1] = MapElement::kDestination;
+        }
+        else
+        {
+            map_vector_[hero_y][hero_x - 1] = MapElement::kGrass;
+        }
+
+        // 再将中间位置恢复成Box或Ready
+        // 思考：会有MapElement::kDestination的情况吗?
+        if (/*reference_map_[hero_y][hero_x] == MapElement::kDestination ||*/ reference_map_[hero_y][hero_x] == MapElement::kReady)
+        {
+            map_vector_[hero_y][hero_x] = MapElement::kReady;
+        }
+        else
+        {
+            map_vector_[hero_y][hero_x] = MapElement::kBox;
+        }
+    }
+    // 最后将最右面位置恢复成原来的Hero状态;如果只走了一步,则恢复成Down(正面朝下),否则恢复成Left
+    if (move_stack_.size() == 1)
+    {
+        map_vector_[hero_y][hero_x + 1] = reference_map_[hero_y][hero_x + 1];
+    }
+    else
+    {
+        map_vector_[hero_y][hero_x + 1] = MapElement::kLeft;
+    }
+
+    hero_x++;
+
+    map_object_->SetHeroX(hero_x);            // 更新小人当前坐标
+    map_object_->UpdateMap(map_vector_);      // 更新地图数据
+    map_object_->SetIsNeedRepaint(true);      // 使地图刷新
 }
 
-void PushBox::UndoMoveRight()
+void PushBox::UndoMoveRight(int move_type)
 {
+    int hero_x = map_object_->GetHeroX();
+    int hero_y = map_object_->GetHeroY();
 
+    // 右方向可移动,即右方向为Grass或Destination时
+    if (move_type == kRightMovable)
+    {
+        UpdateCurrentPosition(hero_x, hero_y, map_vector_);
+    }
+    else if (move_type == kRightUnMovable)
+    {
+        // 先将最右面位置恢复成Destination或Grass
+        if (reference_map_[hero_y][hero_x + 1] == MapElement::kDestination || reference_map_[hero_y][hero_x + 1] == MapElement::kReady)
+        {
+            map_vector_[hero_y][hero_x + 1] = MapElement::kDestination;
+        }
+        else
+        {
+            map_vector_[hero_y][hero_x + 1] = MapElement::kGrass;
+        }
+
+        // 再将中间位置恢复成Box或Ready
+        // 思考：会有MapElement::kDestination的情况吗?
+        if (/*reference_map_[hero_y][hero_x] == MapElement::kDestination ||*/ reference_map_[hero_y][hero_x] == MapElement::kReady)
+        {
+            map_vector_[hero_y][hero_x] = MapElement::kReady;
+        }
+        else
+        {
+            map_vector_[hero_y][hero_x] = MapElement::kBox;
+        }
+    }
+    // 最后将最左面位置恢复成原来的Hero状态;如果只走了一步,则恢复成Down(正面朝下),否则恢复成Right
+    if (move_stack_.size() == 1)
+    {
+        map_vector_[hero_y][hero_x - 1] = reference_map_[hero_y][hero_x - 1];
+    }
+    else
+    {
+        map_vector_[hero_y][hero_x - 1] = MapElement::kRight;
+    }
+
+    hero_x--;
+
+    map_object_->SetHeroX(hero_x);            // 更新小人当前坐标
+    map_object_->UpdateMap(map_vector_);      // 更新地图数据
+    map_object_->SetIsNeedRepaint(true);      // 使地图刷新
 }
 
 void PushBox::UpdateReferenceMap(Map2DVector &map_vec)
@@ -402,46 +528,96 @@ void PushBox::OnMouseClick(const MOUSEMSG mouse_msg)
     int current_level = map_object_->GetLevel();
     switch (mouse_msg.uMsg)
     {
+        // TODO(Sean): 需要将涉及的按钮坐标更换（不要用绝对值）
     case WM_LBUTTONDOWN:
         if (mouse_msg.x >= 47 && mouse_msg.x <= 47 + 163 && mouse_msg.y >= 200 && mouse_msg.y <= 200 + 60)
         {
-            //printf("重新开始 level:%d Click: %#x\n", current_level, map_object_);            
-            printf("重新开始 level:%d\n", current_level);
-            map_object_->LoadMap(current_level); // LoadMap中已经添加了刷新地图操作
-            map_vector_ = map_object_->GetMapVector(); // 将新地图数据更新到当前内存中
+            map_object_->LoadMap(current_level);            // LoadMap中已经添加了刷新地图操作
+            map_vector_ = map_object_->GetMapVector();      // 将新地图数据更新到当前内存中
+            ClearStack();
 
-            //// 利用outtextxy输出提示信息
-            //char tips[128] = { 0 };
-            //sprintf_s(tips, "第%d关", current_level);
-            //UI::ShowTips(650, 0, tips, RGB(6, 31, 62), 40);
-
-            //// 利用drawtext输出提示信息
             char tips[128] = { 0 };
             sprintf_s(tips, "第%d关", current_level);
-            //RECT rectangle = { 650, 0, 730, 40 }; // "第几关"占宽约80
-            //settextcolor(RGB(6, 31, 62));
-            //drawtext(tips, &rectangle, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-            UI::ShowTips(TipsArea::kTipsUpper, tips, 40, TipsType::kLevelOnly);
+            UI::ShowTips(TipsArea::kTipsUpper, tips, 40, false, TipsType::kLevelOnly);
         }
         else if (mouse_msg.x >= 47 && mouse_msg.x <= 47 + 163 && mouse_msg.y >= 300 && mouse_msg.y <= 300 + 60)
         {
-            printf("退一步\n");
+            if (move_stack_.empty())
+            {
+                char tips[32] = { 0 };
+                sprintf_s(tips, "您还未进行移动,无法返回上一步!");
+                UI::ShowTips(TipsArea::kTipsStatus, tips, 24, true);
+            }
+            else
+            {
+                int result = move_stack_.top();
+                switch (result)
+                {
+                case kUpMovable:
+                    UndoMoveUp(result);
+                    break;
+                case kUpUnMovable:
+                    UndoMoveUp(result);
+                    break;
+                case kDownMovable:
+                    UndoMoveDown(result);
+                    break;
+                case kDownUnMovable:
+                    UndoMoveDown(result);
+                    break; 
+                case kLeftMovable:
+                    UndoMoveLeft(result);
+                    break;
+                case kLeftUnMovable:
+                    UndoMoveLeft(result);
+                    break; 
+                case kRightMovable:
+                    UndoMoveRight(result);
+                    break;
+                case kRightUnMovable:
+                    UndoMoveRight(result);
+                    break;
+                }
+                move_stack_.pop(); // 调整为回退之后再删除栈顶元素
+            }
         }
         else if (mouse_msg.x >= 47 && mouse_msg.x <= 47 + 163 && mouse_msg.y >= 400 && mouse_msg.y <= 400 + 60)
         {
-            printf("上一关\n");
             if (current_level == 1)
             {
-
+                char tips[16] = { 0 };
+                sprintf_s(tips, "已经是第1关!");
+                UI::ShowTips(TipsArea::kTipsStatus, tips, 24, true);
+            }
+            else
+            {
+                current_level--;
+                map_object_->LoadMap(current_level);
+                map_vector_ = map_object_->GetMapVector();
+                UpdateReferenceMap(map_vector_);
+                ClearStack();
             }
         }
         else if (mouse_msg.x >= 47 && mouse_msg.x <= 47 + 163 && mouse_msg.y >= 500 && mouse_msg.y <= 500 + 60)
         {
-            printf("下一关\n");
+            if (current_level == kMaxLevel)
+            {
+                char tips[16] = { 0 };
+                sprintf_s(tips, "已经是最后一关!");
+                UI::ShowTips(TipsArea::kTipsStatus, tips, 24, true);
+            }
+            else
+            {
+                current_level++;
+                map_object_->LoadMap(current_level);
+                map_vector_ = map_object_->GetMapVector();
+                UpdateReferenceMap(map_vector_);
+                ClearStack();
+            }
         }
         else if (mouse_msg.x >= 47 && mouse_msg.x <= 47 + 163 && mouse_msg.y >= 600 && mouse_msg.y <= 600 + 60)
         {
-            
+            // 选择关卡功能
             char input[16] = { 0 };
             InputBox(input, 16, "请输入关卡数");
             unsigned int level = atoi(input);
@@ -453,25 +629,14 @@ void PushBox::OnMouseClick(const MOUSEMSG mouse_msg)
             {
                 level = kMaxLevel;
             }
-            map_object_->LoadMap(level); // LoadMap中已经添加了刷新地图操作
-            map_vector_ = map_object_->GetMapVector(); // 将新地图数据更新到当前内存中
+            map_object_->LoadMap(level);                    // LoadMap中已经添加了刷新地图操作
+            map_vector_ = map_object_->GetMapVector();      // 将新地图数据更新到当前内存中
             UpdateReferenceMap(map_vector_);
+            ClearStack();
             
-            //// 利用outtextxy输出提示信息
-            //char tips[128] = { 0 };
-            //sprintf_s(tips, "第%d关", level);
-            //UI::ShowTips(650, 0, tips, RGB(6, 31, 62), 40);
-
-            //// 利用drawtext输出提示信息
             char tips[128] = { 0 };
             sprintf_s(tips, "第%d关", level);
-            //RECT rectangle = { 650, 0, 730, 40 }; // "第几关"占宽约80
-            //settextcolor(RGB(6, 31, 62));
-            //drawtext(tips, &rectangle, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-
-            UI::ShowTips(TipsArea::kTipsUpper, tips, 40, TipsType::kLevelOnly);
-
-            printf("选关: 选择了第%d关\n", level);
+            UI::ShowTips(TipsArea::kTipsUpper, tips, 40, false, TipsType::kLevelOnly);
         }
         break;
     case WM_MOUSEMOVE:
@@ -528,6 +693,14 @@ void PushBox::Run()
         mouse_msg = GetMouseMsg();
         OnMouseClick(mouse_msg);
         Sleep(5);
+    }
+}
+
+void PushBox::ClearStack()
+{
+    while (move_stack_.size() > 0)
+    {
+        move_stack_.pop();
     }
 }
 

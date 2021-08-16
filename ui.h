@@ -36,18 +36,13 @@ public:
         const int game_area_height, const int status_area_height);
     ~UI();
 
-    // 在游戏区域的上方显示关卡提示信息
-    //static void ShowLevelTips(const int level);
-
     // tips_area 表示提示信息所在区域(目前支持状态栏区域和游戏区域上方区域,详见TipsArea)
     // level 表示关卡数,对应tips_area为kTipsUpper;默认为0,表示kTipsStatus区域
-    // tips_type 表示提示信息类型(目前支持仅关卡信息和通关成功信息,详见TipsType)
+    // tips_type 表示提示信息类型(目前支持仅关卡信息和通关成功信息,详见TipsType);目前只有TipsArea为kTipsUpper时,tips_type才有意义;
+    // is_disappear 表示该提示信息是否在展示几秒后自动消失
     static void ShowTips(const int tips_area, char *tips, const int text_size, 
-        const int tips_type = 0, const COLORREF text_color= RGB(6, 31, 62));
+        const bool is_disappear, const int tips_type = 0, const COLORREF text_color = RGB(6, 31, 62));
 
-    // 在指定位置(dst_x,dst_y)处显示提示信息(tips),并设置颜色和字体等属性
-    //static void ShowTips(int dst_x, int dst_y, char *tips, const COLORREF text_color, const int text_size);
-    
 private:
     // 绘制菜单区域
     void DrawMenu();
