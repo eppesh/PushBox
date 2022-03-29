@@ -57,7 +57,7 @@ private:
     void UndoMoveRight(int move_type);           // 撤销向右移动
 
     void UpdateReferenceMap(Map2DVector &map_vec);                           // 更新参考地图数据
-    void OnMouseClick(const MOUSEMSG mouse_msg);
+    void OnMouseClick(const ExMessage mouse_msg);
 
     void ClearStack();                           // 清空栈元素
 

@@ -523,10 +523,10 @@ void PushBox::UpdateReferenceMap(Map2DVector &map_vec)
     }
 }
 
-void PushBox::OnMouseClick(const MOUSEMSG mouse_msg)
+void PushBox::OnMouseClick(const ExMessage mouse_msg)
 {
     int current_level = map_object_->GetLevel();
-    switch (mouse_msg.uMsg)
+    switch (mouse_msg.message)
     {
         // TODO(Sean): 需要将涉及的按钮坐标更换（不要用绝对值）
     case WM_LBUTTONDOWN:
@@ -686,11 +686,11 @@ void PushBox::OnMouseClick(const MOUSEMSG mouse_msg)
 
 void PushBox::Run()
 {
-    MOUSEMSG mouse_msg;
+    ExMessage mouse_msg; // TODO(@Sean): 需升级更新为ExMessage
 
     while (true)
     {
-        mouse_msg = GetMouseMsg();
+        mouse_msg = getmessage(EM_MOUSE);
         OnMouseClick(mouse_msg);
         Sleep(5);
     }
